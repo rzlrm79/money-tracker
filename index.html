@@ -38,6 +38,7 @@
   </div>  <div class="card list">
     <h3>Riwayat</h3>
     <div id="list"></div>
+    <small>Tap = hapus • Tahan = edit</small>
   </div><script>
 let data = JSON.parse(localStorage.getItem('money-data')||'[]');
 
@@ -47,11 +48,20 @@ function render(){
   const list=document.getElementById('list');
   list.innerHTML='';
   let saldo=0;
-  data.forEach(d=>{
+  data.forEach((d,i)=>{
     saldo += d.type==='income'?d.amount:-d.amount;
     const div=document.createElement('div');
     div.className='item '+d.type;
     div.innerHTML=`<span>${d.desc}<br><small>${d.category}</small></span><span>${format(d.amount)}</span>`;
+    div.onclick=()=>{
+      if(confirm('Hapus transaksi ini?')){
+        data.splice(i,1);
+        render();
+      }
+    };
+    div.oncontextmenu=(e)=>{e.preventDefault()};
+    div.ontouchstart=()=>{this._pressTimer=setTimeout(()=>editTx(i),600)};
+    div.ontouchend=()=>clearTimeout(this._pressTimer);
     list.appendChild(div);
   });
   document.getElementById('saldo').innerText=format(saldo);
@@ -66,6 +76,17 @@ function addTx(){
   const category=document.getElementById('category').value;
   data.unshift({desc,amount,type,category,date:Date.now()});
   descInput.value='';amountInput.value='';
+  render();
+}
+
+function editTx(i){
+  const d=data[i];
+  const desc=prompt('Keterangan',d.desc);
+  if(desc===null)return;
+  const amount=prompt('Jumlah',d.amount);
+  if(amount===null)return;
+  const category=prompt('Kategori',d.category||'Lainnya');
+  data[i]={...d,desc,amount:+amount,category};
   render();
 }
 

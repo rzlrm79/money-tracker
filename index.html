@@ -8,8 +8,6 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7FBFA3">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 body{
   margin:0;
@@ -18,10 +16,12 @@ body{
   background:#F7F9F4;
   color:#2E3A34;
 }
+
 h1{
   text-align:center;
   color:#2F7D64;
 }
+
 .card{
   background:#FFFFFF;
   border-radius:16px;
@@ -30,6 +30,7 @@ h1{
   box-shadow:0 4px 12px rgba(0,0,0,.08);
   border:1px solid #E2E8E4;
 }
+
 input,select,button{
   width:100%;
   padding:12px;
@@ -39,14 +40,22 @@ input,select,button{
   font-size:14px;
   box-sizing:border-box;
 }
-input,select{ background:#F7F9F4; }
+
+input,select{
+  background:#F7F9F4;
+}
+
 button{
   background:#7FBFA3;
-  color:#fff;
+  color:#FFFFFF;
   font-weight:bold;
   border:none;
 }
-button:active{ background:#6AAC93; }
+
+button:active{
+  background:#6AAC93;
+}
+
 .item{
   display:flex;
   justify-content:space-between;
@@ -54,8 +63,17 @@ button:active{ background:#6AAC93; }
   padding-bottom:6px;
   border-bottom:1px dashed #E2E8E4;
 }
+
 .income{ color:#2F7D64; }
 .expense{ color:#E57373; }
+
+.bar{
+  height:10px;
+  background:#7FBFA3;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
 small{ opacity:.75; }
 </style>
 </head>
@@ -71,6 +89,7 @@ small{ opacity:.75; }
 
 <div class="card">
   <h3>Tambah Transaksi</h3>
+
   <input id="desc" placeholder="Keterangan">
   <input id="amount" type="number" placeholder="Jumlah">
   <input id="date" type="date">
@@ -98,7 +117,7 @@ small{ opacity:.75; }
     <option value="all">Semua Bulan</option>
   </select>
 
-  <canvas id="expenseChart" height="220"></canvas>
+  <div id="chart"></div>
 </div>
 
 <div class="card">
@@ -109,76 +128,75 @@ small{ opacity:.75; }
 
 <script>
 let data = JSON.parse(localStorage.getItem('money-data') || '[]');
-let chartInstance = null;
 
 /* ===== UTIL ===== */
 function rupiah(n){
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
-/* ===== PERBAIKI DATA LAMA ===== */
+/* ===== MIGRASI DATA LAMA ===== */
 function normalizeDates(){
-  let changed=false;
-  data=data.map(d=>{
+  let changed = false;
+  data = data.map(d=>{
     if(!d.date){
-      changed=true;
-      return {...d,date:new Date().toISOString().slice(0,10)};
+      changed = true;
+      return {...d, date:new Date().toISOString().slice(0,10)};
     }
     return d;
   });
   if(changed){
-    localStorage.setItem('money-data',JSON.stringify(data));
+    localStorage.setItem('money-data', JSON.stringify(data));
   }
 }
 
 /* ===== RENDER ===== */
 function render(){
-  let saldo=0;
-  const list=document.getElementById('list');
-  list.innerHTML='';
+  let saldo = 0;
+  const list = document.getElementById('list');
+  list.innerHTML = '';
 
   data.forEach((d,i)=>{
-    saldo+=d.type==='income'?d.amount:-d.amount;
+    saldo += d.type==='income' ? d.amount : -d.amount;
 
-    const div=document.createElement('div');
-    div.className='item '+d.type;
-    div.innerHTML=`
-      <span>${d.desc}<br>
-      <small>${d.category} • ${d.date}</small></span>
+    const div = document.createElement('div');
+    div.className = 'item ' + d.type;
+    div.innerHTML = `
+      <span>${d.desc}<br><small>${d.category} • ${d.date}</small></span>
       <span>${rupiah(d.amount)}</span>
     `;
 
-    div.onclick=()=>{
+    div.onclick = () => {
       if(confirm('Hapus transaksi ini?')){
         data.splice(i,1);
         save();
       }
     };
 
-    div.ontouchstart=()=>div._t=setTimeout(()=>editTx(i),600);
-    div.ontouchend=()=>clearTimeout(div._t);
+    div.ontouchstart = () => div._t = setTimeout(()=>editTx(i),600);
+    div.ontouchend = () => clearTimeout(div._t);
 
     list.appendChild(div);
   });
 
-  document.getElementById('saldo').innerText=rupiah(saldo);
+  document.getElementById('saldo').innerText = rupiah(saldo);
   drawChart();
 }
 
 /* ===== FILTER BULAN ===== */
 function fillMonthFilter(){
-  const sel=document.getElementById('monthFilter');
-  const months=new Set();
+  const sel = document.getElementById('monthFilter');
+  const months = new Set();
 
   data.forEach(d=>{
     if(d.date) months.add(d.date.slice(0,7));
   });
 
-  sel.innerHTML='<option value="all">Semua Bulan</option>';
+  sel.innerHTML = '<option value="all">Semua Bulan</option>';
+
   [...months].sort().reverse().forEach(m=>{
-    const opt=document.createElement('option');
-    opt.value=m;
-    opt.text=new Date(m+'-01')
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.text = new Date(m+'-01')
       .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
     sel.appendChild(opt);
   });
@@ -186,98 +204,82 @@ function fillMonthFilter(){
 
 /* ===== GRAFIK ===== */
 function drawChart(){
-  const filter=document.getElementById('monthFilter').value;
-  let exp=data.filter(d=>d.type==='expense');
+  const box = document.getElementById('chart');
+  const filter = document.getElementById('monthFilter').value;
+  box.innerHTML = '';
 
-  if(filter!=='all'){
-    exp=exp.filter(d=>d.date.startsWith(filter));
+  let exp = data.filter(d=>d.type==='expense');
+
+  if(filter !== 'all'){
+    exp = exp.filter(d=>d.date.startsWith(filter));
   }
-
-  const ctx=document.getElementById('expenseChart').getContext('2d');
-  if(chartInstance) chartInstance.destroy();
 
   if(!exp.length){
-    ctx.clearRect(0,0,300,300);
+    box.innerHTML = '<small>Tidak ada pengeluaran</small>';
     return;
   }
 
-  const map={};
+  const map = {};
   exp.forEach(d=>{
-    map[d.category]=(map[d.category]||0)+d.amount;
+    map[d.category] = (map[d.category]||0) + d.amount;
   });
 
-  chartInstance=new Chart(ctx,{
-    type:'doughnut',
-    data:{
-      labels:Object.keys(map),
-      datasets:[{
-        data:Object.values(map),
-        backgroundColor:[
-          '#7FBFA3','#A8D5BA','#CFE8D8',
-          '#9BCFB5','#E3F3EB'
-        ],
-        borderWidth:0
-      }]
-    },
-    options:{
-      responsive:true,
-      cutout:'65%',
-      animation:{duration:900},
-      plugins:{
-        legend:{position:'bottom'},
-        tooltip:{
-          callbacks:{
-            label:c=>c.label+': '+rupiah(c.raw)
-          }
-        }
-      }
-    }
+  const max = Math.max(...Object.values(map));
+
+  Object.entries(map).forEach(([cat,val])=>{
+    box.innerHTML += `
+      <small>${cat} — ${rupiah(val)}</small>
+      <div class="bar" style="width:${val/max*100}%"></div>
+    `;
   });
 }
 
-/* ===== TAMBAH TRANSAKSI (FIX UTAMA) ===== */
+/* ===== CRUD ===== */
 function addTx(){
-  const desc=document.getElementById('desc').value.trim();
-  const amount=Number(document.getElementById('amount').value);
-  const type=document.getElementById('type').value;
-  const category=document.getElementById('category').value;
-  const date=document.getElementById('date').value;
+  const desc = descEl.value;
+  const amount = Number(amountEl.value);
+  const type = typeEl.value;
+  const category = categoryEl.value;
+  const date = dateEl.value;
 
   if(!desc || !amount || !date){
-    alert('Lengkapi data');
-    return;
+    return alert('Lengkapi data');
   }
 
-  data.unshift({desc,amount,type,category,date});
-
-  document.getElementById('desc').value='';
-  document.getElementById('amount').value='';
-  document.getElementById('date').value=
-    new Date().toISOString().slice(0,10);
-
+  data.unshift({ desc, amount, type, category, date });
+  descEl.value='';
+  amountEl.value='';
+  dateEl.value = new Date().toISOString().slice(0,10);
   save();
 }
 
-/* ===== EDIT ===== */
 function editTx(i){
-  const d=data[i];
-  const desc=prompt('Keterangan',d.desc); if(desc===null)return;
-  const amt=prompt('Jumlah',d.amount); if(amt===null)return;
-  const date=prompt('Tanggal (YYYY-MM-DD)',d.date); if(date===null)return;
-  data[i]={...d,desc,amount:Number(amt),date};
+  const d = data[i];
+  const desc = prompt('Keterangan', d.desc);
+  if(desc===null) return;
+  const amt = prompt('Jumlah', d.amount);
+  if(amt===null) return;
+  const date = prompt('Tanggal (YYYY-MM-DD)', d.date);
+  if(date===null) return;
+
+  data[i] = {...d, desc, amount:Number(amt), date};
   save();
 }
 
-/* ===== SIMPAN ===== */
 function save(){
-  localStorage.setItem('money-data',JSON.stringify(data));
+  localStorage.setItem('money-data', JSON.stringify(data));
   fillMonthFilter();
   render();
 }
 
 /* ===== INIT ===== */
-document.getElementById('date').value=
-  new Date().toISOString().slice(0,10);
+const descEl = document.getElementById('desc');
+const amountEl = document.getElementById('amount');
+const typeEl = document.getElementById('type');
+const categoryEl = document.getElementById('category');
+const dateEl = document.getElementById('date');
+
+dateEl.value = new Date().toISOString().slice(0,10);
 
 normalizeDates();
 fillMonthFilter();

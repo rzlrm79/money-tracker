@@ -16,21 +16,15 @@ body{
   background:#F7F9F4;
   color:#2E3A34;
 }
-
-h1{
-  text-align:center;
-  color:#2F7D64;
-}
-
+h1{text-align:center;color:#2F7D64}
 .card{
-  background:#FFFFFF;
+  background:#fff;
   border-radius:16px;
   padding:16px;
   margin-bottom:16px;
   box-shadow:0 4px 12px rgba(0,0,0,.08);
   border:1px solid #E2E8E4;
 }
-
 input,select,button{
   width:100%;
   padding:12px;
@@ -40,18 +34,14 @@ input,select,button{
   font-size:14px;
   box-sizing:border-box;
 }
-
-input,select{ background:#F7F9F4; }
-
+input,select{background:#F7F9F4}
 button{
   background:#7FBFA3;
-  color:#FFFFFF;
+  color:#fff;
   font-weight:bold;
   border:none;
 }
-
-button:active{ background:#6AAC93; }
-
+button:active{background:#6AAC93}
 .item{
   display:flex;
   justify-content:space-between;
@@ -59,17 +49,14 @@ button:active{ background:#6AAC93; }
   padding-bottom:6px;
   border-bottom:1px dashed #E2E8E4;
 }
-
-.income{ color:#2F7D64; }
-.expense{ color:#E57373; }
-
+.income{color:#2F7D64}
+.expense{color:#E57373}
 .bar{
   height:10px;
   background:#7FBFA3;
   border-radius:6px;
   margin-bottom:10px;
 }
-
 #toast{
   position:fixed;
   bottom:24px;
@@ -83,15 +70,12 @@ button:active{ background:#6AAC93; }
   opacity:0;
   pointer-events:none;
   transition:.3s;
-  box-shadow:0 6px 16px rgba(0,0,0,.2);
 }
-
 #toast.show{
   opacity:1;
   transform:translateX(-50%) translateY(-10px);
 }
-
-small{ opacity:.75; }
+small{opacity:.75}
 </style>
 </head>
 
@@ -100,7 +84,7 @@ small{ opacity:.75; }
 <h1>💰 Money Tracker</h1>
 
 <div class="card">
-  <h3>Saldo</h3>
+  <h3>Saldo (Bulan Terpilih)</h3>
   <h2 id="saldo">Rp 0</h2>
 </div>
 
@@ -135,14 +119,14 @@ small{ opacity:.75; }
 
 <div class="card">
   <h3>Grafik Pengeluaran</h3>
-  <select id="monthFilter" onchange="drawChart()">
+  <select id="monthFilter" onchange="render()">
     <option value="all">Semua Bulan</option>
   </select>
   <div id="chart"></div>
 </div>
 
 <div class="card">
-  <h3>Riwayat</h3>
+  <h3>Riwayat (Bulan Terpilih)</h3>
   <div id="list"></div>
   <small>Tap = hapus • Tahan = edit</small>
 </div>
@@ -152,12 +136,10 @@ small{ opacity:.75; }
 <script>
 let data = JSON.parse(localStorage.getItem('money-data') || '[]');
 
-/* ===== UTIL ===== */
-function rupiah(n){
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
+/* UTIL */
+const rupiah = n => 'Rp ' + n.toLocaleString('id-ID');
 
-/* ===== MIGRASI DATA LAMA ===== */
+/* MIGRASI DATA LAMA */
 function normalizeDates(){
   let changed=false;
   data=data.map(d=>{
@@ -170,12 +152,31 @@ function normalizeDates(){
   if(changed) localStorage.setItem('money-data',JSON.stringify(data));
 }
 
-/* ===== RENDER ===== */
+/* FILTER BULAN */
+function fillMonthFilter(){
+  const prev = monthFilter.value;
+  monthFilter.innerHTML='<option value="all">Semua Bulan</option>';
+  [...new Set(data.map(d=>d.date.slice(0,7)))].sort().reverse()
+    .forEach(m=>{
+      const o=document.createElement('option');
+      o.value=m;
+      o.text=new Date(m+'-01')
+        .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+      monthFilter.appendChild(o);
+    });
+  monthFilter.value = prev || 'all';
+}
+
+/* RENDER UTAMA (RIWAYAT + SALDO + GRAFIK) */
 function render(){
-  let saldo=0;
   list.innerHTML='';
+  const f = monthFilter.value;
+  let saldo=0;
+
   data.forEach((d,i)=>{
-    saldo+=d.type==='income'?d.amount:-d.amount;
+    if(f!=='all' && !d.date.startsWith(f)) return;
+
+    saldo += d.type==='income'?d.amount:-d.amount;
 
     const div=document.createElement('div');
     div.className='item '+d.type;
@@ -197,33 +198,15 @@ function render(){
     list.appendChild(div);
   });
 
-  saldoEl.innerText=rupiah(saldo);
+  saldoEl.innerText = rupiah(saldo);
   drawChart();
 }
 
-/* ===== FILTER BULAN ===== */
-function fillMonthFilter(){
-  const prev=monthFilter.value;
-  monthFilter.innerHTML='<option value="all">Semua Bulan</option>';
-
-  [...new Set(data.map(d=>d.date.slice(0,7)))].sort().reverse()
-    .forEach(m=>{
-      const o=document.createElement('option');
-      o.value=m;
-      o.text=new Date(m+'-01')
-        .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
-      monthFilter.appendChild(o);
-    });
-
-  monthFilter.value=prev||'all';
-}
-
-/* ===== GRAFIK ===== */
+/* GRAFIK */
 function drawChart(){
   chart.innerHTML='';
-  const f=monthFilter.value;
-
-  let exp=data.filter(d=>d.type==='expense'&&(f==='all'||d.date.startsWith(f)));
+  const f = monthFilter.value;
+  let exp = data.filter(d=>d.type==='expense' && (f==='all'||d.date.startsWith(f)));
 
   if(!exp.length){
     chart.innerHTML='<small>Tidak ada pengeluaran</small>';
@@ -245,29 +228,29 @@ function drawChart(){
   renderSummary();
 }
 
-/* ===== RINGKASAN ===== */
+/* RINGKASAN */
 function renderSummary(){
-  const f=monthFilter.value;
-  let inc=0,exp=0;
+  const f = monthFilter.value;
+  let inc=0, exp=0;
 
   data.forEach(d=>{
-    if(f!=='all'&&!d.date.startsWith(f)) return;
+    if(f!=='all' && !d.date.startsWith(f)) return;
     d.type==='income'?inc+=d.amount:exp+=d.amount;
   });
 
-  sumIncome.innerText=rupiah(inc);
-  sumExpense.innerText=rupiah(exp);
-  sumBalance.innerText=rupiah(inc-exp);
+  sumIncome.innerText = rupiah(inc);
+  sumExpense.innerText = rupiah(exp);
+  sumBalance.innerText = rupiah(inc-exp);
 }
 
-/* ===== TOAST ===== */
+/* TOAST */
 function showToast(t){
   toast.textContent=t;
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),2000);
 }
 
-/* ===== CRUD ===== */
+/* CRUD */
 function addTx(){
   if(!descEl.value||!amountEl.value||!dateEl.value){
     alert('Lengkapi data'); return;
@@ -294,7 +277,6 @@ function editTx(i){
   const desc=prompt('Keterangan',d.desc); if(desc===null)return;
   const amt=prompt('Jumlah',d.amount); if(amt===null)return;
   const date=prompt('Tanggal (YYYY-MM-DD)',d.date); if(date===null)return;
-
   data[i]={...d,desc,amount:Number(amt),date};
   save();
 }
@@ -305,7 +287,7 @@ function save(){
   render();
 }
 
-/* ===== INIT ===== */
+/* INIT */
 const descEl=document.getElementById('desc');
 const amountEl=document.getElementById('amount');
 const typeEl=document.getElementById('type');
@@ -322,7 +304,6 @@ const sumExpense=document.getElementById('sumExpense');
 const sumBalance=document.getElementById('sumBalance');
 
 dateEl.value=new Date().toISOString().slice(0,10);
-
 normalizeDates();
 fillMonthFilter();
 render();

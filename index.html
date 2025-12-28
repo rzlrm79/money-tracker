@@ -37,7 +37,7 @@
     <button onclick="addTx()">Tambah</button>
   </div>  <div class="card">
     <h3>Grafik Pengeluaran</h3>
-    <canvas id="chart" height="200"></canvas>
+    <canvas id="chart" width="300" height="200"></canvas>
   </div>  <div class="card list">
     <h3>Riwayat</h3>
     <div id="list"></div>
@@ -60,6 +60,7 @@ function render(){
       if(confirm('Hapus transaksi ini?')){
         data.splice(i,1);
         render();
+  drawChart();
       }
     };
     div.ontouchstart=()=>{this._pressTimer=setTimeout(()=>editTx(i),600)};
@@ -72,36 +73,36 @@ function render(){
 
 function drawChart(){
   const canvas=document.getElementById('chart');
-  if(!canvas)return;
+  if(!canvas) return;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // kelompokkan pengeluaran per kategori
+  const expenses=data.filter(d=>d.type==='expense');
+  if(expenses.length===0) return;
+
   const map={};
-  data.filter(d=>d.type==='expense').forEach(d=>{
+  expenses.forEach(d=>{
     const cat=d.category||'Lainnya';
     map[cat]=(map[cat]||0)+d.amount;
   });
 
   const entries=Object.entries(map);
-  if(entries.length===0)return;
-
   const total=entries.reduce((s,[,v])=>s+v,0);
+
   let start=0;
   entries.forEach(([cat,val],i)=>{
     const slice=(val/total)*Math.PI*2;
     ctx.beginPath();
     ctx.moveTo(150,100);
     ctx.arc(150,100,80,start,start+slice);
-    start+=slice;
     ctx.closePath();
-    ctx.fillStyle=`hsl(${i*70%360},70%,60%)`;
+    ctx.fillStyle=`hsl(${(i*80)%360},70%,60%)`;
     ctx.fill();
+    start+=slice;
 
-    // label sederhana
     ctx.fillStyle='#fff';
-    ctx.font='10px Arial';
-    ctx.fillText(cat,10,15+i*12);
+    ctx.font='11px Arial';
+    ctx.fillText(cat,10,15+i*14);
   });
 }
 

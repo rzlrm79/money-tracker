@@ -1,147 +1,116 @@
-<!DOCTYPE html><html lang="id">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Money Tracker</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#0f172a; color:#e5e7eb; margin:0; padding:16px }
-    h1 { text-align:center }
-    .card { background:#020617; padding:16px; border-radius:12px; margin-bottom:12px }
-    input, select, button { width:100%; padding:10px; margin-top:8px; border-radius:8px; border:none }
-    button { background:#22c55e; color:#020617; font-weight:bold }
-    .list { margin-top:12px }
-    .item { display:flex; justify-content:space-between; margin-top:6px }
-    .income { color:#22c55e }
-    .expense { color:#ef4444 }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Tracker</title>
+<style>
+body{background:#020617;color:#e5e7eb;font-family:Arial;margin:0;padding:16px}
+h1{text-align:center}
+.card{background:#020617;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 0 30px #000}
+input,select,button{width:100%;padding:12px;border-radius:10px;border:none;margin-top:8px}
+button{background:#22c55e;font-weight:bold}
+.item{display:flex;justify-content:space-between;margin-top:8px}
+.income{color:#22c55e}
+.expense{color:#ef4444}
+.bar{height:10px;background:#22c55e;border-radius:6px}
+small{opacity:.7}
+</style>
 </head>
 <body>
-  <h1>💰 Money Tracker</h1>  <div class="card">
-    <h3>Saldo</h3>
-    <h2 id="saldo">Rp 0</h2>
-  </div>  <div class="card">
-    <h3>Tambah Transaksi</h3>
-    <input id="desc" placeholder="Keterangan" />
-    <input id="amount" type="number" placeholder="Jumlah" />
-    <select id="type">
-      <option value="income">Pemasukan</option>
-      <option value="expense">Pengeluaran</option>
-    </select>
-    <select id="category">
-      <option value="Makan">🍔 Makan</option>
-      <option value="Transport">🚗 Transport</option>
-      <option value="Rumah">🏠 Rumah</option>
-      <option value="Gaji">💼 Gaji</option>
-      <option value="Lainnya">📦 Lainnya</option>
-    </select>
-    <button onclick="addTx()">Tambah</button>
-  </div>  <div class="card">
-    <h3>Grafik Pengeluaran</h3>
-    <div id="chart"></div>
-  </div>  <div class="card list">
-    <h3>Riwayat</h3>
-    <div id="list"></div>
-    <small>Tap = hapus • Tahan = edit</small>
-  </div><script>
-// pastikan grafik digambar setelah halaman siap
-window.addEventListener('load', ()=>{ try{ drawChart(); }catch(e){} });
-let data = JSON.parse(localStorage.getItem('money-data')||'[]');
 
-function format(n){return 'Rp '+n.toLocaleString('id-ID')}
+<h1>💰 Money Tracker</h1>
+
+<div class="card">
+<h3>Saldo</h3>
+<h2 id="saldo">Rp 0</h2>
+</div>
+
+<div class="card">
+<h3>Tambah Transaksi</h3>
+<input id="desc" placeholder="Keterangan">
+<input id="amount" type="number" placeholder="Jumlah">
+<select id="type">
+<option value="income">Pemasukan</option>
+<option value="expense">Pengeluaran</option>
+</select>
+<select id="category">
+<option>Makan</option>
+<option>Transport</option>
+<option>Rumah</option>
+<option>Gaji</option>
+<option>Lainnya</option>
+</select>
+<button onclick="addTx()">Tambah</button>
+</div>
+
+<div class="card">
+<h3>Grafik Pengeluaran</h3>
+<div id="chart"></div>
+</div>
+
+<div class="card">
+<h3>Riwayat</h3>
+<div id="list"></div>
+<small>Tap = hapus • Tahan = edit</small>
+</div>
+
+<script>
+let data=JSON.parse(localStorage.getItem('money')||'[]');
+
+function rupiah(n){return 'Rp '+n.toLocaleString('id-ID')}
 
 function render(){
-  const list=document.getElementById('list');
+  let saldo=0,list=document.getElementById('list');
   list.innerHTML='';
-  let saldo=0;
   data.forEach((d,i)=>{
-    saldo += d.type==='income'?d.amount:-d.amount;
-    const div=document.createElement('div');
+    saldo+=d.type==='income'?d.amount:-d.amount;
+    let div=document.createElement('div');
     div.className='item '+d.type;
-    div.innerHTML=`<span>${d.desc}<br><small>${d.category}</small></span><span>${format(d.amount)}</span>`;
-    div.onclick=()=>{
-      if(confirm('Hapus transaksi ini?')){
-        data.splice(i,1);
-        render();
-  drawChart();
-  drawChart();
-      }
-    };
-    div.ontouchstart=()=>{this._pressTimer=setTimeout(()=>editTx(i),600)};
-    div.ontouchend=()=>clearTimeout(this._pressTimer);
+    div.innerHTML=`<span>${d.desc}<br><small>${d.category}</small></span><span>${rupiah(d.amount)}</span>`;
+    div.onclick=()=>confirm('Hapus?')&&(data.splice(i,1),save());
+    div.ontouchstart=()=>div._t=setTimeout(()=>edit(i),600);
+    div.ontouchend=()=>clearTimeout(div._t);
     list.appendChild(div);
   });
-  document.getElementById('saldo').innerText=format(saldo);
-  localStorage.setItem('money-data',JSON.stringify(data));
+  document.getElementById('saldo').innerText=rupiah(saldo);
+  drawChart();
 }
 
 function drawChart(){
-  const box=document.getElementById('chart');
-  if(!box) return;
+  let box=document.getElementById('chart');
   box.innerHTML='';
-
-  const expenses=data.filter(d=>d.type==='expense');
-  if(expenses.length===0){
-    box.innerHTML='<small>Belum ada data pengeluaran</small>';
-    return;
+  let exp=data.filter(d=>d.type==='expense');
+  if(!exp.length){box.innerHTML='<small>Belum ada pengeluaran</small>';return;}
+  let map={};
+  exp.forEach(d=>map[d.category]=(map[d.category]||0)+d.amount);
+  let max=Math.max(...Object.values(map));
+  for(let k in map){
+    box.innerHTML+=`<small>${k} — ${rupiah(map[k])}</small>
+    <div class="bar" style="width:${map[k]/max*100}%"></div>`;
   }
-
-  const map={};
-  expenses.forEach(d=>{
-    const cat=d.category||'Lainnya';
-    map[cat]=(map[cat]||0)+d.amount;
-  });
-
-  const max=Math.max(...Object.values(map));
-
-  Object.entries(map).forEach(([cat,val])=>{
-    const row=document.createElement('div');
-    row.style.margin='8px 0';
-
-    const label=document.createElement('div');
-    label.innerText=`${cat} — Rp ${val.toLocaleString('id-ID')}`;
-    label.style.fontSize='12px';
-
-    const bar=document.createElement('div');
-    bar.style.height='10px';
-    bar.style.borderRadius='6px';
-    bar.style.background='#22c55e';
-    bar.style.width=(val/max*100)+'%';
-
-    row.appendChild(label);
-    row.appendChild(bar);
-    box.appendChild(row);
-  });
 }
 
 function addTx(){
-  const desc=descInput.value;
-  const amount=+amountInput.value;
-  const type=typeSelect.value;
-  if(!desc||!amount)return alert('Lengkapi data');
-  const category=document.getElementById('category').value;
-  data.unshift({desc,amount,type,category,date:Date.now()});
-  descInput.value='';amountInput.value='';
-  render();
-  drawChart();
+  let d={desc:desc.value,amount:+amount.value,type:type.value,category:category.value};
+  if(!d.desc||!d.amount)return alert('Lengkapi data');
+  data.unshift(d);desc.value='';amount.value='';save();
 }
 
-function editTx(i){
-  const d=data[i];
-  const desc=prompt('Keterangan',d.desc);
-  if(desc===null)return;
-  const amount=prompt('Jumlah',d.amount);
-  if(amount===null)return;
-  const category=prompt('Kategori',d.category||'Lainnya');
-  data[i]={...d,desc,amount:+amount,category};
-  render();
-  drawChart();
+function edit(i){
+  let d=data[i];
+  let desc=prompt('Keterangan',d.desc); if(desc===null)return;
+  let amt=prompt('Jumlah',d.amount); if(amt===null)return;
+  data[i]={...d,desc,amount:+amt}; save();
 }
 
-const descInput=document.getElementById('desc');
-const amountInput=document.getElementById('amount');
-const typeSelect=document.getElementById('type');
+function save(){
+  localStorage.setItem('money',JSON.stringify(data));
+  render();
+}
 
 render();
-  drawChart();
-</script></body>
+</script>
+
+</body>
 </html>

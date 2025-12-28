@@ -130,7 +130,7 @@ small{
 <div class="card">
   <h3>Grafik Pengeluaran</h3>
 
-  <select id="monthFilter" onchange="render()">
+  <select id="monthFilter" onchange="drawChart()">
     <option value="all">Semua Bulan</option>
   </select>
 
@@ -199,7 +199,6 @@ function render(){
 
   document.getElementById('saldo').innerText = rupiah(saldo);
 
-  fillMonthFilter();
   drawChart();
 }
 
@@ -292,7 +291,9 @@ function save(){
   localStorage.setItem('money-data', JSON.stringify(data));
   render();
 }
+  
 normalizeDates();
+fillMonthFilter();
 render();
 </script>
 

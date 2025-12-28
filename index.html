@@ -43,6 +43,8 @@
     <div id="list"></div>
     <small>Tap = hapus • Tahan = edit</small>
   </div><script>
+// pastikan grafik digambar setelah halaman siap
+window.addEventListener('load', ()=>{ try{ drawChart(); }catch(e){} });
 let data = JSON.parse(localStorage.getItem('money-data')||'[]');
 
 function format(n){return 'Rp '+n.toLocaleString('id-ID')}
@@ -60,6 +62,7 @@ function render(){
       if(confirm('Hapus transaksi ini?')){
         data.splice(i,1);
         render();
+  drawChart();
   drawChart();
       }
     };
@@ -119,6 +122,7 @@ function addTx(){
   data.unshift({desc,amount,type,category,date:Date.now()});
   descInput.value='';amountInput.value='';
   render();
+  drawChart();
 }
 
 function editTx(i){
@@ -130,6 +134,7 @@ function editTx(i){
   const category=prompt('Kategori',d.category||'Lainnya');
   data[i]={...d,desc,amount:+amount,category};
   render();
+  drawChart();
 }
 
 const descInput=document.getElementById('desc');
@@ -137,5 +142,6 @@ const amountInput=document.getElementById('amount');
 const typeSelect=document.getElementById('type');
 
 render();
+  drawChart();
 </script></body>
 </html>

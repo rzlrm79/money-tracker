@@ -35,6 +35,9 @@
       <option value="Lainnya">📦 Lainnya</option>
     </select>
     <button onclick="addTx()">Tambah</button>
+  </div>  <div class="card">
+    <h3>Grafik Pengeluaran</h3>
+    <canvas id="chart" height="200"></canvas>
   </div>  <div class="card list">
     <h3>Riwayat</h3>
     <div id="list"></div>
@@ -59,13 +62,31 @@ function render(){
         render();
       }
     };
-    div.oncontextmenu=(e)=>{e.preventDefault()};
     div.ontouchstart=()=>{this._pressTimer=setTimeout(()=>editTx(i),600)};
     div.ontouchend=()=>clearTimeout(this._pressTimer);
     list.appendChild(div);
   });
   document.getElementById('saldo').innerText=format(saldo);
   localStorage.setItem('money-data',JSON.stringify(data));
+}
+
+function drawChart(){
+  const ctx=document.getElementById('chart').getContext('2d');
+  ctx.clearRect(0,0,300,200);
+  const expense=data.filter(d=>d.type==='expense');
+  const total=expense.reduce((s,d)=>s+d.amount,0);
+  if(!total)return;
+  let start=0;
+  expense.forEach(d=>{
+    const slice=(d.amount/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(150,100);
+    ctx.arc(150,100,80,start,start+slice);
+    start+=slice;
+    ctx.closePath();
+    ctx.fillStyle=`hsl(${Math.random()*360},70%,60%)`;
+    ctx.fill();
+  });('money-data',JSON.stringify(data));
 }
 
 function addTx(){

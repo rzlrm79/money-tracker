@@ -27,6 +27,13 @@
       <option value="income">Pemasukan</option>
       <option value="expense">Pengeluaran</option>
     </select>
+    <select id="category">
+      <option value="Makan">🍔 Makan</option>
+      <option value="Transport">🚗 Transport</option>
+      <option value="Rumah">🏠 Rumah</option>
+      <option value="Gaji">💼 Gaji</option>
+      <option value="Lainnya">📦 Lainnya</option>
+    </select>
     <button onclick="addTx()">Tambah</button>
   </div>  <div class="card list">
     <h3>Riwayat</h3>
@@ -44,7 +51,7 @@ function render(){
     saldo += d.type==='income'?d.amount:-d.amount;
     const div=document.createElement('div');
     div.className='item '+d.type;
-    div.innerHTML=`<span>${d.desc}</span><span>${format(d.amount)}</span>`;
+    div.innerHTML=`<span>${d.desc}<br><small>${d.category}</small></span><span>${format(d.amount)}</span>`;
     list.appendChild(div);
   });
   document.getElementById('saldo').innerText=format(saldo);
@@ -56,7 +63,8 @@ function addTx(){
   const amount=+amountInput.value;
   const type=typeSelect.value;
   if(!desc||!amount)return alert('Lengkapi data');
-  data.unshift({desc,amount,type,date:Date.now()});
+  const category=document.getElementById('category').value;
+  data.unshift({desc,amount,type,category,date:Date.now()});
   descInput.value='';amountInput.value='';
   render();
 }

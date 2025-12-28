@@ -74,6 +74,27 @@ button:active{
   margin-bottom:10px;
 }
 
+  #toast{
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#2F7D64;
+  color:#fff;
+  padding:12px 18px;
+  border-radius:14px;
+  font-size:14px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .3s, transform .3s;
+  box-shadow:0 6px 16px rgba(0,0,0,.2);
+}
+
+#toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(-10px);
+}
+
 small{ opacity:.75; }
 </style>
 </head>
@@ -125,6 +146,8 @@ small{ opacity:.75; }
   <div id="list"></div>
   <small>Tap = hapus • Tahan = edit</small>
 </div>
+
+<div id="toast">Transaksi tersimpan</div>
 
 <script>
 let data = JSON.parse(localStorage.getItem('money-data') || '[]');
@@ -234,6 +257,16 @@ function drawChart(){
   });
 }
 
+  function showToast(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+
+  setTimeout(()=>{
+    t.classList.remove('show');
+  }, 2000);
+  }
+
 /* ===== CRUD ===== */
 function addTx(){
   const desc = descEl.value;
@@ -251,6 +284,7 @@ function addTx(){
   amountEl.value='';
   dateEl.value = new Date().toISOString().slice(0,10);
   save();
+showToast('Transaksi tersimpan');
 }
 
 function editTx(i){

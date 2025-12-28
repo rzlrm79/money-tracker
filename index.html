@@ -6,19 +6,81 @@
 <title>Money Tracker</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#020617">
+<meta name="theme-color" content="#7FBFA3">
 
 <style>
-body{margin:0;padding:16px;font-family:Arial;background:#020617;color:#e5e7eb}
-h1{text-align:center}
-.card{background:#020617;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 0 25px #000}
-input,select,button{width:100%;padding:12px;margin-top:8px;border-radius:10px;border:none}
-button{background:#22c55e;color:#020617;font-weight:bold}
-.item{display:flex;justify-content:space-between;margin-top:8px}
-.income{color:#22c55e}
-.expense{color:#ef4444}
-.bar{height:10px;background:#22c55e;border-radius:6px;margin-bottom:8px}
-small{opacity:.7}
+body{
+  margin:0;
+  padding:16px;
+  font-family:Arial, sans-serif;
+  background:#F7F9F4;
+  color:#2E3A34;
+}
+
+h1{
+  text-align:center;
+  color:#2F7D64;
+}
+
+.card{
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  border:1px solid #E2E8E4;
+}
+
+input,select,button{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:12px;
+  border:1px solid #E2E8E4;
+  font-size:14px;
+}
+
+input,select{
+  background:#F7F9F4;
+}
+
+button{
+  background:#7FBFA3;
+  color:#FFFFFF;
+  font-weight:bold;
+  border:none;
+}
+
+button:active{
+  background:#6AAC93;
+}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  margin-top:10px;
+  padding-bottom:6px;
+  border-bottom:1px dashed #E2E8E4;
+}
+
+.income{
+  color:#2F7D64;
+}
+
+.expense{
+  color:#E57373;
+}
+
+.bar{
+  height:10px;
+  background:#7FBFA3;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+small{
+  opacity:.75;
+}
 </style>
 </head>
 

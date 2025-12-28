@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#020617">
 <title>Money Tracker</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#020617">
 
 <style>
 body{margin:0;padding:16px;font-family:Arial;background:#020617;color:#e5e7eb}
@@ -26,40 +27,45 @@ small{opacity:.7}
 <h1>💰 Money Tracker</h1>
 
 <div class="card">
-<h3>Saldo</h3>
-<h2 id="saldo">Rp 0</h2>
+  <h3>Saldo</h3>
+  <h2 id="saldo">Rp 0</h2>
 </div>
 
 <div class="card">
-<h3>Tambah Transaksi</h3>
-<input id="desc" placeholder="Keterangan">
-<input id="amount" type="number" placeholder="Jumlah">
+  <h3>Tambah Transaksi</h3>
+  <input id="desc" placeholder="Keterangan">
+  <input id="amount" type="number" placeholder="Jumlah">
 
-<select id="type">
-<option value="income">Pemasukan</option>
-<option value="expense">Pengeluaran</option>
-</select>
+  <select id="type">
+    <option value="income">Pemasukan</option>
+    <option value="expense">Pengeluaran</option>
+  </select>
 
-<select id="category">
-<option>Makan</option>
-<option>Transport</option>
-<option>Rumah</option>
-<option>Gaji</option>
-<option>Lainnya</option>
-</select>
+  <select id="category">
+    <option>Makan</option>
+    <option>Transport</option>
+    <option>Rumah</option>
+    <option>Gaji</option>
+    <option>Lainnya</option>
+  </select>
 
-<button onclick="addTx()">Tambah</button>
+  <button onclick="addTx()">Tambah</button>
 </div>
 
 <div class="card">
-<h3>Grafik Pengeluaran</h3>
-<div id="chart"></div>
+  <h3>Grafik Pengeluaran</h3>
+
+  <select id="monthFilter" onchange="render()">
+    <option value="all">Semua Bulan</option>
+  </select>
+
+  <div id="chart"></div>
 </div>
 
 <div class="card">
-<h3>Riwayat</h3>
-<div id="list"></div>
-<small>Tap = hapus • Tahan = edit</small>
+  <h3>Riwayat</h3>
+  <div id="list"></div>
+  <small>Tap = hapus • Tahan = edit</small>
 </div>
 
 <script>
@@ -98,16 +104,46 @@ function render(){
   });
 
   document.getElementById('saldo').innerText = rupiah(saldo);
+
+  fillMonthFilter();
   drawChart();
+}
+
+function fillMonthFilter(){
+  const sel = document.getElementById('monthFilter');
+  const months = new Set();
+
+  data.forEach(d=>{
+    if(d.date) months.add(d.date.slice(0,7));
+  });
+
+  const current = sel.value;
+  sel.innerHTML = '<option value="all">Semua Bulan</option>';
+
+  [...months].sort().reverse().forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.text = new Date(m+'-01')
+      .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+    sel.appendChild(opt);
+  });
+
+  sel.value = current || 'all';
 }
 
 function drawChart(){
   const box = document.getElementById('chart');
+  const filter = document.getElementById('monthFilter').value;
   box.innerHTML = '';
 
-  const exp = data.filter(d=>d.type==='expense');
+  let exp = data.filter(d=>d.type==='expense');
+
+  if(filter !== 'all'){
+    exp = exp.filter(d=>d.date && d.date.startsWith(filter));
+  }
+
   if(!exp.length){
-    box.innerHTML = '<small>Belum ada pengeluaran</small>';
+    box.innerHTML = '<small>Tidak ada pengeluaran</small>';
     return;
   }
 
@@ -134,7 +170,14 @@ function addTx(){
 
   if(!desc || !amount) return alert('Lengkapi data');
 
-  data.unshift({desc,amount,type,category});
+  data.unshift({
+    desc,
+    amount,
+    type,
+    category,
+    date: new Date().toISOString()
+  });
+
   document.getElementById('desc').value='';
   document.getElementById('amount').value='';
   save();
@@ -146,6 +189,7 @@ function editTx(i){
   if(desc===null) return;
   const amt = prompt('Jumlah', d.amount);
   if(amt===null) return;
+
   data[i] = {...d, desc, amount:Number(amt)};
   save();
 }

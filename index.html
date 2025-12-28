@@ -150,6 +150,25 @@ function rupiah(n){
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
+  function normalizeDates(){
+  let changed = false;
+
+  data = data.map(d=>{
+    if(!d.date){
+      changed = true;
+      return {
+        ...d,
+        date: new Date().toISOString()
+      };
+    }
+    return d;
+  });
+
+  if(changed){
+    localStorage.setItem('money-data', JSON.stringify(data));
+  }
+  }
+
 function render(){
   let saldo = 0;
   const list = document.getElementById('list');
@@ -273,7 +292,7 @@ function save(){
   localStorage.setItem('money-data', JSON.stringify(data));
   render();
 }
-
+normalizeDates();
 render();
 </script>
 

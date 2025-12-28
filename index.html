@@ -41,9 +41,7 @@ input,select,button{
   box-sizing:border-box;
 }
 
-input,select{
-  background:#F7F9F4;
-}
+input,select{ background:#F7F9F4; }
 
 button{
   background:#7FBFA3;
@@ -52,9 +50,7 @@ button{
   border:none;
 }
 
-button:active{
-  background:#6AAC93;
-}
+button:active{ background:#6AAC93; }
 
 .item{
   display:flex;
@@ -74,7 +70,7 @@ button:active{
   margin-bottom:10px;
 }
 
-  #toast{
+#toast{
   position:fixed;
   bottom:24px;
   left:50%;
@@ -86,7 +82,7 @@ button:active{
   font-size:14px;
   opacity:0;
   pointer-events:none;
-  transition:opacity .3s, transform .3s;
+  transition:.3s;
   box-shadow:0 6px 16px rgba(0,0,0,.2);
 }
 
@@ -109,8 +105,14 @@ small{ opacity:.75; }
 </div>
 
 <div class="card">
-  <h3>Tambah Transaksi</h3>
+  <h3>Ringkasan Bulanan</h3>
+  <div class="item income"><span>Pemasukan</span><strong id="sumIncome">Rp 0</strong></div>
+  <div class="item expense"><span>Pengeluaran</span><strong id="sumExpense">Rp 0</strong></div>
+  <div class="item"><span>Sisa</span><strong id="sumBalance">Rp 0</strong></div>
+</div>
 
+<div class="card">
+  <h3>Tambah Transaksi</h3>
   <input id="desc" placeholder="Keterangan">
   <input id="amount" type="number" placeholder="Jumlah">
   <input id="date" type="date">
@@ -133,11 +135,9 @@ small{ opacity:.75; }
 
 <div class="card">
   <h3>Grafik Pengeluaran</h3>
-
   <select id="monthFilter" onchange="drawChart()">
     <option value="all">Semua Bulan</option>
   </select>
-
   <div id="chart"></div>
 </div>
 
@@ -159,161 +159,169 @@ function rupiah(n){
 
 /* ===== MIGRASI DATA LAMA ===== */
 function normalizeDates(){
-  let changed = false;
-  data = data.map(d=>{
+  let changed=false;
+  data=data.map(d=>{
     if(!d.date){
-      changed = true;
-      return {...d, date:new Date().toISOString().slice(0,10)};
+      changed=true;
+      return {...d,date:new Date().toISOString().slice(0,10)};
     }
     return d;
   });
-  if(changed){
-    localStorage.setItem('money-data', JSON.stringify(data));
-  }
+  if(changed) localStorage.setItem('money-data',JSON.stringify(data));
 }
 
 /* ===== RENDER ===== */
 function render(){
-  let saldo = 0;
-  const list = document.getElementById('list');
-  list.innerHTML = '';
-
+  let saldo=0;
+  list.innerHTML='';
   data.forEach((d,i)=>{
-    saldo += d.type==='income' ? d.amount : -d.amount;
+    saldo+=d.type==='income'?d.amount:-d.amount;
 
-    const div = document.createElement('div');
-    div.className = 'item ' + d.type;
-    div.innerHTML = `
+    const div=document.createElement('div');
+    div.className='item '+d.type;
+    div.innerHTML=`
       <span>${d.desc}<br><small>${d.category} • ${d.date}</small></span>
       <span>${rupiah(d.amount)}</span>
     `;
 
-    div.onclick = () => {
+    div.onclick=()=>{
       if(confirm('Hapus transaksi ini?')){
         data.splice(i,1);
         save();
       }
     };
 
-    div.ontouchstart = () => div._t = setTimeout(()=>editTx(i),600);
-    div.ontouchend = () => clearTimeout(div._t);
+    div.ontouchstart=()=>div._t=setTimeout(()=>editTx(i),600);
+    div.ontouchend=()=>clearTimeout(div._t);
 
     list.appendChild(div);
   });
 
-  document.getElementById('saldo').innerText = rupiah(saldo);
+  saldoEl.innerText=rupiah(saldo);
   drawChart();
 }
 
 /* ===== FILTER BULAN ===== */
 function fillMonthFilter(){
-  const sel = document.getElementById('monthFilter');
-  const months = new Set();
+  const prev=monthFilter.value;
+  monthFilter.innerHTML='<option value="all">Semua Bulan</option>';
 
-  data.forEach(d=>{
-    if(d.date) months.add(d.date.slice(0,7));
-  });
+  [...new Set(data.map(d=>d.date.slice(0,7)))].sort().reverse()
+    .forEach(m=>{
+      const o=document.createElement('option');
+      o.value=m;
+      o.text=new Date(m+'-01')
+        .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+      monthFilter.appendChild(o);
+    });
 
-  sel.innerHTML = '<option value="all">Semua Bulan</option>';
-
-  [...months].sort().reverse().forEach(m=>{
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.text = new Date(m+'-01')
-      .toLocaleDateString('id-ID',{month:'long',year:'numeric'});
-    sel.appendChild(opt);
-  });
+  monthFilter.value=prev||'all';
 }
 
 /* ===== GRAFIK ===== */
 function drawChart(){
-  const box = document.getElementById('chart');
-  const filter = document.getElementById('monthFilter').value;
-  box.innerHTML = '';
+  chart.innerHTML='';
+  const f=monthFilter.value;
 
-  let exp = data.filter(d=>d.type==='expense');
-
-  if(filter !== 'all'){
-    exp = exp.filter(d=>d.date.startsWith(filter));
-  }
+  let exp=data.filter(d=>d.type==='expense'&&(f==='all'||d.date.startsWith(f)));
 
   if(!exp.length){
-    box.innerHTML = '<small>Tidak ada pengeluaran</small>';
+    chart.innerHTML='<small>Tidak ada pengeluaran</small>';
+    renderSummary();
     return;
   }
 
-  const map = {};
-  exp.forEach(d=>{
-    map[d.category] = (map[d.category]||0) + d.amount;
-  });
+  const map={};
+  exp.forEach(d=>map[d.category]=(map[d.category]||0)+d.amount);
+  const max=Math.max(...Object.values(map));
 
-  const max = Math.max(...Object.values(map));
-
-  Object.entries(map).forEach(([cat,val])=>{
-    box.innerHTML += `
-      <small>${cat} — ${rupiah(val)}</small>
-      <div class="bar" style="width:${val/max*100}%"></div>
+  Object.entries(map).forEach(([c,v])=>{
+    chart.innerHTML+=`
+      <small>${c} — ${rupiah(v)}</small>
+      <div class="bar" style="width:${v/max*100}%"></div>
     `;
   });
+
+  renderSummary();
 }
 
-  function showToast(text){
-  const t = document.getElementById('toast');
-  t.textContent = text;
-  t.classList.add('show');
+/* ===== RINGKASAN ===== */
+function renderSummary(){
+  const f=monthFilter.value;
+  let inc=0,exp=0;
 
-  setTimeout(()=>{
-    t.classList.remove('show');
-  }, 2000);
-  }
+  data.forEach(d=>{
+    if(f!=='all'&&!d.date.startsWith(f)) return;
+    d.type==='income'?inc+=d.amount:exp+=d.amount;
+  });
+
+  sumIncome.innerText=rupiah(inc);
+  sumExpense.innerText=rupiah(exp);
+  sumBalance.innerText=rupiah(inc-exp);
+}
+
+/* ===== TOAST ===== */
+function showToast(t){
+  toast.textContent=t;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2000);
+}
 
 /* ===== CRUD ===== */
 function addTx(){
-  const desc = descEl.value;
-  const amount = Number(amountEl.value);
-  const type = typeEl.value;
-  const category = categoryEl.value;
-  const date = dateEl.value;
-
-  if(!desc || !amount || !date){
-    return alert('Lengkapi data');
+  if(!descEl.value||!amountEl.value||!dateEl.value){
+    alert('Lengkapi data'); return;
   }
 
-  data.unshift({ desc, amount, type, category, date });
+  data.unshift({
+    desc:descEl.value,
+    amount:Number(amountEl.value),
+    type:typeEl.value,
+    category:categoryEl.value,
+    date:dateEl.value
+  });
+
   descEl.value='';
   amountEl.value='';
-  dateEl.value = new Date().toISOString().slice(0,10);
+  dateEl.value=new Date().toISOString().slice(0,10);
+
   save();
-showToast('Transaksi tersimpan');
+  showToast('Transaksi tersimpan');
 }
 
 function editTx(i){
-  const d = data[i];
-  const desc = prompt('Keterangan', d.desc);
-  if(desc===null) return;
-  const amt = prompt('Jumlah', d.amount);
-  if(amt===null) return;
-  const date = prompt('Tanggal (YYYY-MM-DD)', d.date);
-  if(date===null) return;
+  const d=data[i];
+  const desc=prompt('Keterangan',d.desc); if(desc===null)return;
+  const amt=prompt('Jumlah',d.amount); if(amt===null)return;
+  const date=prompt('Tanggal (YYYY-MM-DD)',d.date); if(date===null)return;
 
-  data[i] = {...d, desc, amount:Number(amt), date};
+  data[i]={...d,desc,amount:Number(amt),date};
   save();
 }
 
 function save(){
-  localStorage.setItem('money-data', JSON.stringify(data));
+  localStorage.setItem('money-data',JSON.stringify(data));
   fillMonthFilter();
   render();
 }
 
 /* ===== INIT ===== */
-const descEl = document.getElementById('desc');
-const amountEl = document.getElementById('amount');
-const typeEl = document.getElementById('type');
-const categoryEl = document.getElementById('category');
-const dateEl = document.getElementById('date');
+const descEl=document.getElementById('desc');
+const amountEl=document.getElementById('amount');
+const typeEl=document.getElementById('type');
+const categoryEl=document.getElementById('category');
+const dateEl=document.getElementById('date');
 
-dateEl.value = new Date().toISOString().slice(0,10);
+const list=document.getElementById('list');
+const chart=document.getElementById('chart');
+const saldoEl=document.getElementById('saldo');
+const monthFilter=document.getElementById('monthFilter');
+const toast=document.getElementById('toast');
+const sumIncome=document.getElementById('sumIncome');
+const sumExpense=document.getElementById('sumExpense');
+const sumBalance=document.getElementById('sumBalance');
+
+dateEl.value=new Date().toISOString().slice(0,10);
 
 normalizeDates();
 fillMonthFilter();

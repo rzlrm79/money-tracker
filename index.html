@@ -37,7 +37,7 @@
     <button onclick="addTx()">Tambah</button>
   </div>  <div class="card">
     <h3>Grafik Pengeluaran</h3>
-    <canvas id="chart" width="300" height="200"></canvas>
+    <div id="chart"></div>
   </div>  <div class="card list">
     <h3>Riwayat</h3>
     <div id="list"></div>
@@ -72,13 +72,15 @@ function render(){
 }
 
 function drawChart(){
-  const canvas=document.getElementById('chart');
-  if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const box=document.getElementById('chart');
+  if(!box) return;
+  box.innerHTML='';
 
   const expenses=data.filter(d=>d.type==='expense');
-  if(expenses.length===0) return;
+  if(expenses.length===0){
+    box.innerHTML='<small>Belum ada data pengeluaran</small>';
+    return;
+  }
 
   const map={};
   expenses.forEach(d=>{
@@ -86,23 +88,25 @@ function drawChart(){
     map[cat]=(map[cat]||0)+d.amount;
   });
 
-  const entries=Object.entries(map);
-  const total=entries.reduce((s,[,v])=>s+v,0);
+  const max=Math.max(...Object.values(map));
 
-  let start=0;
-  entries.forEach(([cat,val],i)=>{
-    const slice=(val/total)*Math.PI*2;
-    ctx.beginPath();
-    ctx.moveTo(150,100);
-    ctx.arc(150,100,80,start,start+slice);
-    ctx.closePath();
-    ctx.fillStyle=`hsl(${(i*80)%360},70%,60%)`;
-    ctx.fill();
-    start+=slice;
+  Object.entries(map).forEach(([cat,val])=>{
+    const row=document.createElement('div');
+    row.style.margin='8px 0';
 
-    ctx.fillStyle='#fff';
-    ctx.font='11px Arial';
-    ctx.fillText(cat,10,15+i*14);
+    const label=document.createElement('div');
+    label.innerText=`${cat} — Rp ${val.toLocaleString('id-ID')}`;
+    label.style.fontSize='12px';
+
+    const bar=document.createElement('div');
+    bar.style.height='10px';
+    bar.style.borderRadius='6px';
+    bar.style.background='#22c55e';
+    bar.style.width=(val/max*100)+'%';
+
+    row.appendChild(label);
+    row.appendChild(bar);
+    box.appendChild(row);
   });
 }
 

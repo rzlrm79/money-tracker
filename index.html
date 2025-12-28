@@ -2,84 +2,97 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Money Tracker</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7FBFA3">
+<meta name="theme-color" content="#8FCFB6">
 
 <style>
+/* ===== RESET & MOBILE SAFE ===== */
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body{
   margin:0;
   padding:16px;
-  font-family:Arial, sans-serif;
-  background:#F7F9F4;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background:#F6F8F3;
   color:#2E3A34;
 }
 
+/* ===== HEADER ===== */
 h1{
   text-align:center;
   color:#2F7D64;
+  margin-bottom:20px;
 }
 
+/* ===== CARD ===== */
 .card{
   background:#FFFFFF;
-  border-radius:16px;
+  border-radius:18px;
   padding:16px;
   margin-bottom:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
   border:1px solid #E2E8E4;
 }
 
-input,select,button{
+/* ===== FORM ===== */
+input,
+select,
+button{
   width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:12px;
+  padding:14px 16px;
+  margin-top:10px;
+  border-radius:14px;
   border:1px solid #E2E8E4;
-  font-size:14px;
+  font-size:16px; /* penting: cegah auto zoom Android */
 }
 
-input,select{
-  background:#F7F9F4;
+input,
+select{
+  background:#F9FBF7;
 }
 
 button{
-  background:#7FBFA3;
+  background:#8FCFB6;
   color:#FFFFFF;
-  font-weight:bold;
+  font-weight:600;
   border:none;
 }
 
 button:active{
-  background:#6AAC93;
+  background:#78BDA2;
 }
 
+/* ===== LIST ===== */
 .item{
   display:flex;
   justify-content:space-between;
-  margin-top:10px;
-  padding-bottom:6px;
+  align-items:flex-start;
+  margin-top:12px;
+  padding-bottom:8px;
   border-bottom:1px dashed #E2E8E4;
 }
 
-.income{
-  color:#2F7D64;
-}
+.income{ color:#2F7D64; }
+.expense{ color:#E57373; }
 
-.expense{
-  color:#E57373;
-}
-
+/* ===== CHART ===== */
 .bar{
-  height:10px;
-  background:#7FBFA3;
-  border-radius:6px;
-  margin-bottom:10px;
+  height:12px;
+  background:linear-gradient(90deg,#8FCFB6,#6FB59B);
+  border-radius:8px;
+  margin-bottom:12px;
 }
 
+/* ===== TEXT ===== */
 small{
   opacity:.75;
+  font-size:13px;
 }
 </style>
 </head>
